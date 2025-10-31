@@ -1,12 +1,15 @@
 # app.py
 from flask import Flask, render_template, request, jsonify, url_for, send_from_directory
+import matplotlib
 from data_processing import load_metadata, preprocess_audio, generate_audio_plots
 import librosa
 import os
 import pandas as pd
 import random 
 import logging
-
+import matplotlib
+matplotlib.use('Agg')  # Use a non-interactive backend for matplotlib
+    
 app = Flask(__name__)
 
 # Configure logging
@@ -91,10 +94,10 @@ def explore_audio():
         y, sr = librosa.load(audio_filepath, sr=22050) 
 
         # Preprocess to get features
-        mel_spec_db, mfccs = preprocess_audio(y, sr)
+        mel_spec_db, mfccs, zrc = preprocess_audio(y, sr)
 
         # Generate plots as base64 images
-        plots_b64 = generate_audio_plots(y, sr, mel_spec_db, mfccs, title=f"{audio_class} ({audio_filename})")
+        plots_b64 = generate_audio_plots(y, sr, mel_spec_db, mfccs, zrc, title=f"{audio_class} ({audio_filename})")
 
         # Create a URL for audio playback. Flask's send_from_directory will handle serving it.
         audio_url = url_for('serve_audio', filename=audio_filename)
@@ -103,6 +106,7 @@ def explore_audio():
             waveform_image=plots_b64['waveform_b64'],
             mel_spectrogram_image=plots_b64['mel_spectrogram_b64'],
             mfcc_image=plots_b64['mfcc_b64'],
+            zcr_image=plots_b64['zcr_b64'],
             audio_class=audio_class,
             audio_file=audio_filename,
             duration=f"{len(y)/sr:.2f} s",
@@ -120,4 +124,4 @@ def serve_audio(filename):
     return send_from_directory(os.path.join(BASE_DATA_PATH, 'audio'), filename)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, use_reloader=False)

@@ -6,7 +6,8 @@ import numpy as np
 import os
 import io
 import base64
-
+import matplotlib
+matplotlib.use('Agg')  # Prevent GUI backend issues
 def load_metadata(base_data_path="data/esc50"):
     metadata_path = os.path.join(base_data_path, 'meta', 'esc50.csv')
     metadata = pd.read_csv(metadata_path)
@@ -43,9 +44,12 @@ def preprocess_audio(y, sr, n_fft=2048, hop_length=512, n_mels=128, n_mfcc=20):
     # MFCCs
     mfccs = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=n_mfcc, S=S_db) # Compute MFCCs from the Mel Spectrogram in dB
 
-    return S_db, mfccs
+    # zero-cross rate (ZCR) - 1 feature
+    zcr = librosa.feature.zero_crossing_rate(y, frame_length=n_fft,
+                                             hop_length=hop_length)[0] 
+    return S_db, mfccs, zcr
 
-def generate_audio_plots(y, sr, mel_spectrogram_db, mfccs, title="Audio Features"):
+def generate_audio_plots(y, sr, mel_spectrogram_db, mfccs, zrc, title="Audio Features"):
     """
     Generate matplotlib plots for waveform, Mel spectrogram, and MFCCs,
     and returns them as base64 encoded strings.
@@ -71,7 +75,6 @@ def generate_audio_plots(y, sr, mel_spectrogram_db, mfccs, title="Audio Features
     plt.show()
     plots['mel_spectrogram_b64'] = plot_to_base64(fig_spec)
 
-    
     # 3. MFCCs
     fig_mfcc, ax_mfcc = plt.subplots(figsize=(10, 4))
     img = librosa.display.specshow(mfccs, sr=sr, x_axis='time', ax=ax_mfcc)
@@ -81,6 +84,18 @@ def generate_audio_plots(y, sr, mel_spectrogram_db, mfccs, title="Audio Features
     ax_mfcc.set_ylabel('MFCC Coefficient')
     plt.show()
     plots['mfcc_b64'] = plot_to_base64(fig_mfcc)
+
+    # 4. ZCR plot
+    fig_zcr, ax_zcr = plt.subplots(figsize=(10, 4))
+    zcr = librosa.feature.zero_crossing_rate(y)[0]
+    times = librosa.times_like(zcr, sr=sr)
+    ax_zcr.plot(times, zcr, color='r')
+    ax_zcr.set_title(f'Zero-Crossing Rate: {title}')
+    ax_zcr.set_xlabel('Time [s]')
+    ax_zcr.set_ylabel('ZCR')
+    plt.show()
+    plots['zcr_b64'] = plot_to_base64(fig_zcr)
+
     return plots
 
 def plot_to_base64(fig):
@@ -120,13 +135,13 @@ if __name__ == '__main__':
         print(f"Audio loaded: Sample Rate = {sr} Hz, Duration = {len(y)/sr:.2f} seconds")
 
         # preprocess to get features
-        mel_spec_db, mfccs = preprocess_audio(y, sr)
+        mel_spec_db, mfccs, zcr = preprocess_audio(y, sr)
         print(f"Mel Spectrogram shape: {mel_spec_db.shape}")
         print(f"MFCCs shape: {mfccs.shape}")
 
         # generate and show plots (will save temporarily and display)
         print("\nGenerating plots (these will pop up in windows)...")
-        plots = generate_audio_plots(y, sr, mel_spec_db, mfccs, title=f"{sample_class} ({sample_filename})")
+        plots = generate_audio_plots(y, sr, mel_spec_db, mfccs, zcr, title=f"{sample_class} ({sample_filename})")
         print("Plots generated. Check your display for the pop-up windows.")
         # save or display the plots as needed
         for key, b64 in plots.items():

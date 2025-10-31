@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ESC-50 Acoustic Data Explorer</title>
+    <title>ESC-50 Dataset Web Visualization</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <div class="container">
-        <h1>ESC-50 Acoustic Data Explorer</h1>
-        <p>Explore environmental sound recordings from the ESC-50 dataset.</p>
+        <h1>ESC-50 Dataset Web Visualization</h1>
+        <p>Visualize features (waveform, spectrograms, MFCCs) of environmental sound recordings from the ESC-50 dataset.</p>
         
         <form id="audioForm">
             <div class="input-group">
@@ -20,13 +20,13 @@
                     <option value="{{ category }}">{{ category }}</option>
                     {% endfor %}
                 </select>
-                <button type="submit">Explore Random from Class</button>
+                <button type="submit">Explore random sample</button>
             </div>
             
             <div class="input-group">
                 <label for="fileIdInput">Or enter a specific File ID:</label>
                 <input type="text" id="fileIdInput" name="file_id" placeholder="e.g., 1-100032-A-0.wav">
-                <button type="submit">Explore Specific File</button>
+                <button type="submit">Explore specific audio file</button>
             </div>
         </form>
 
@@ -46,14 +46,19 @@
 
             <div class="plot-section">
                 <h3>Waveform</h3>
+                <p><strong>Normalized amplitude of the .wav file over time</strong></p>
                 <img id="waveformImage" src="" alt="Waveform Plot">
             </div>
             <div class="plot-section">
                 <h3>Mel Spectrogram</h3>
+                <p><strong>Log-scaled Mel Spectrogram: Represents the loudness (amplitude in decibels) of different frequencies over time. The Mel scale is based on how humans perceive pitch. 
+                    It has more points in the lower frequencies where our hearing is more sensitive and fewer points in the higher frequencies. Can be used as a 2-D image for CNN </strong></p>
                 <img id="melSpectrogramImage" src="" alt="Mel Spectrogram Plot">
             </div>
              <div class="plot-section">
-                <h3>MFCCs (first 20)</h3>
+                <h3>MFCCs (first 20) - feature vector</h3>
+                <p><strong>Mel-Frequency Cepstral Coefficients (MFCCs): A set of coefficients derived from the mel spectrogram that represent the short-term power spectrum of a sound
+                    The coefficients provides a compressed representation of the signal's spectral envelope (mel spectrogram), capturing timbral information efficiently. Used as a 2-D feature for ML/CNN </strong></p>
                 <img id="mfccImage" src="" alt="MFCC Plot">
             </div>
         </div>

@@ -39,6 +39,7 @@ document.getElementById('audioForm').addEventListener('submit', async function(e
         document.getElementById('waveformImage').src = 'data:image/png;base64,' + data.waveform_image;
         document.getElementById('melSpectrogramImage').src = 'data:image/png;base64,' + data.mel_spectrogram_image;
         document.getElementById('mfccImage').src = 'data:image/png;base64,' + data.mfcc_image;
+        document.getElementById('zcrImage').src = 'data:image/png;base64,' + data.zcr_image;
         document.getElementById('displayFileId').textContent = data.audio_file;
         document.getElementById('displayClass').textContent = data.audio_class;
         document.getElementById('displayDuration').textContent = data.duration;
