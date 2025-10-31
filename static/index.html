@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESC-50 Acoustic Data Explorer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>ESC-50 Acoustic Data Explorer</h1>
+        <p>Explore environmental sound recordings from the ESC-50 dataset.</p>
+        
+        <form id="audioForm">
+            <div class="input-group">
+                <label for="categorySelect">Choose a Class (Category):</label>
+                <select id="categorySelect" name="category_name">
+                    <option value="">-- Select a Category --</option>
+                    {% for category in categories %}
+                    <option value="{{ category }}">{{ category }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit">Explore Random from Class</button>
+            </div>
+            
+            <div class="input-group">
+                <label for="fileIdInput">Or enter a specific File ID:</label>
+                <input type="text" id="fileIdInput" name="file_id" placeholder="e.g., 1-100032-A-0.wav">
+                <button type="submit">Explore Specific File</button>
+            </div>
+        </form>
+
+        <div id="loading" style="display: none;">Loading audio features...</div>
+        <div id="error" style="color: red; display: none;"></div>
+
+        <div id="results" style="display: none;">
+            <h2>Results for <span id="displayFileId"></span> (<span id="displayClass"></span>)</h2>
+            <p><strong>Duration:</strong> <span id="displayDuration"></span> | <strong>Sample Rate:</strong> <span id="displaySampleRate"></span></p>
+            
+            <div class="audio-player">
+                <h3>Original Audio</h3>
+                <audio controls id="audioPlayer">
+                    Your browser does not support the audio element.
+                </audio>
+            </div>
+
+            <div class="plot-section">
+                <h3>Waveform</h3>
+                <img id="waveformImage" src="" alt="Waveform Plot">
+            </div>
+            <div class="plot-section">
+                <h3>Mel Spectrogram</h3>
+                <img id="melSpectrogramImage" src="" alt="Mel Spectrogram Plot">
+            </div>
+             <div class="plot-section">
+                <h3>MFCCs (first 20)</h3>
+                <img id="mfccImage" src="" alt="MFCC Plot">
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
