@@ -44,11 +44,11 @@ Technical assessment using the ESC-50 dataset. It provides a simple web interfac
 
 The `data_processing.py` script handles the conversion of raw `.wav` audio files into ML features.
 
-1.  **Amplitude Normalization:** * Scales the audio signal to have a maximum absolute value of 1. It standardizes the input dynamic range so extreme volume differences between audios do not unfairly influence feature extraction or model training.
+1.  **Amplitude Normalization:** Scales the audio signal to have a maximum absolute value of 1. It standardizes the input dynamic range so extreme volume differences between audios do not unfairly influence feature extraction or model training.
 
-2.  **Mel Spectrogram:** * Generates a 2D representation of the audio's frequency content over time, on a Mel scale. Calculated using `librosa.feature.melspectrogram`, then converted to decibels (`librosa.power_to_db`). The Mel scale mimics human hearing perception, making features more relevant for sound classification. Spectrograms are robust to variations in overall loudness (especially after dB conversion) and provide rich information about the sound's time evolution. Works as a 2-D matrix for Convolutional Neural Networks (CNNs).
+2.  **Mel Spectrogram:** Generates a 2D representation of the audio's frequency content over time, on a Mel scale. Calculated using `librosa.feature.melspectrogram`, then converted to decibels (`librosa.power_to_db`). The Mel scale mimics human hearing perception, making features more relevant for sound classification. Spectrograms are robust to variations in overall loudness (especially after dB conversion) and provide rich information about the sound's time evolution. Works as a 2-D matrix for Convolutional Neural Networks (CNNs).
 
-3.  **Mel-frequency Cepstral Coefficients (MFCCs):** *  Extracts coefficients that describe the overall shape of the spectral envelope of a sound. Computed using `librosa.feature.mfcc`, derived from the Mel spectrogram. They provide a compact and effective representation of the sound's spectral characteristics. Works as a feature vector for classical ML algorithms or even as a 2-D matrix for CNNs.
+3.  **Mel-frequency Cepstral Coefficients (MFCCs):** Extracts coefficients that describe the overall shape of the spectral envelope of a sound. Computed using `librosa.feature.mfcc`, derived from the Mel spectrogram. They provide a compact and effective representation of the sound's spectral characteristics. Works as a feature vector for classical ML algorithms or even as a 2-D matrix for CNNs.
 
 ### Hyperparameters:
 * Standard values were used to calculate the Mel spectogram
@@ -87,4 +87,5 @@ Functions: Conv2D, Batch Normalization, MaxPooling, DropoutFlatten, Dense, Softm
 
 I did a very small CNN model for fast testing in my personal computer with 2 convolutional networks. 
 30 epochs, learning rate = 0.001, batch size = 32, AdaptiveAvgPool2d, Adam optimizer
-Validation Accuracy = 47.75%
+
+* Validation Accuracy = 47.75%
