@@ -87,4 +87,4 @@ Functions: Conv2D, Batch Normalization, MaxPooling, DropoutFlatten, Dense, Softm
 
 I did a very small CNN model for fast testing in my personal computer with 2 convolutional networks. 
 30 epochs, learning rate = 0.001, batch size = 32, AdaptiveAvgPool2d, Adam optimizer
-Validation Accuracy = 51.75%
+Validation Accuracy = 47.75%
