@@ -20,7 +20,7 @@ try:
     app.logger.info(f"Flask App: Loaded {len(METADATA)} audio files metadata.")
     
     # Create a mapping from category names to integer labels if needed for model training
-    # And get unique categories for dropdown list
+    # And get unique categories for dropdown listf
     unique_categories = sorted(METADATA['category'].unique().tolist())
     category_to_id = {cat: i for i, cat in enumerate(unique_categories)}
     id_to_category = {i: cat for cat, i in category_to_id.items()}
