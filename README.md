@@ -37,15 +37,14 @@ Technical assessment using the ESC-50 dataset. It provides a simple web interfac
 
 **Dataset:** ESC-50: A dataset for environmental sound classification.
 
-*   **Description:** The ESC-50 dataset consists of 2000 annotated environmental sound recordings, each 5 seconds long. It's organized into 50 classes, with 40 examples per class. The dataset is pre-arranged into 5 folds for 5-fold cross-validation.
-*   **Reason for Selection:** 2k files, 5 second clips, balanced dataset, and pre-defined cross-validation folds. A lot of papers for benchmarking and comparing results.
+*   **Description:** The ESC-50 dataset consists of 2000 annotated environmental sound recordings, each 5 seconds long. It's organized into 50 classes, with 40 examples per class. The dataset is pre-arranged into 5 folds for 5-fold cross-validation. 
+*   **Reason for Selection:** 2k audio files, 5 second clips, balanced dataset, and pre-defined cross-validation folds. A lot of papers for benchmarking and comparing results. See the Github repository. 
 
 ### Preprocessing Steps:
 
 The `data_processing.py` script handles the conversion of raw `.wav` audio files into ML features.
 
-1.  **Amplitude Normalization:**
-    * Scales the audio signal to have a maximum absolute value of 1. It standardizes the input dynamic range so extreme volume differences between audios do not unfairly influence feature extraction or model training.
+1.  **Amplitude Normalization:** * Scales the audio signal to have a maximum absolute value of 1. It standardizes the input dynamic range so extreme volume differences between audios do not unfairly influence feature extraction or model training.
 
 2.  **Mel Spectrogram:** * Generates a 2D representation of the audio's frequency content over time, on a Mel scale. Calculated using `librosa.feature.melspectrogram`, then converted to decibels (`librosa.power_to_db`). The Mel scale mimics human hearing perception, making features more relevant for sound classification. Spectrograms are robust to variations in overall loudness (especially after dB conversion) and provide rich information about the sound's time evolution. Works as a 2-D matrix for Convolutional Neural Networks (CNNs).
 
@@ -71,9 +70,7 @@ From the paper "These annotations were then used to extract 5-second-long record
 
 *   **Dataset Design:** The `esc50.csv` metadata includes a `fold` column (1 to 5). The dataset creators ensured that recordings from the same original source (`src_file` in the metadata) are *always* kept within the same fold. This ensures that *source-based data leakeage does not occur during training*. For temporal bias, the recordings are distinct environmental events rather than continuous streams. 
 
-The ESC-50 is also a balanced dataset. For other imbalanced datasets, I would apply oversampling/undersampling techniques. Class weighting (assigning higher weights to minority classes in the loss function) or augmentation (pitch shift, stretching, noise injection/reduction)
-
-For overfitting scenarios, I would assume that these could be issues: overlap between recordings, specific recording conditions/equipment, specific background noise, small training datasets. To tackle this, I would add random noise to every ESC-50 sample.
+The ESC-50 is also a balanced dataset. For other imbalanced datasets, I would apply oversampling/undersampling techniques. Class weighting (assigning higher weights to minority classes in the loss function) or augmentation (pitch shift, stretching, noise injection/reduction). For overfitting scenarios, I would assume that these could be issues: overlap between recordings, specific recording conditions/equipment, specific background noise, small training datasets. To tackle this, I would add random noise to every ESC-50 sample.
 
 
 ## 3. Model Architecture Selection
