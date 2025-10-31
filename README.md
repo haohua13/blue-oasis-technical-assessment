@@ -19,20 +19,14 @@ Technical assessment using the ESC-50 dataset. It provides a simple web interfac
     ```
 
 4.  **Activate the Virtual Environment:**
-    *   **On Windows:**
-        ```bash
-        .\venv\Scripts\activate
-        ```
     *   **On macOS/Linux:**
         ```bash
         source venv/bin/activate
         ```
-
 5.  **Install Dependencies:**
     ```bash
     pip install -r requirements.txt
     ```
-
 6.  **Run the Flask Application:**
     ```bash
     python app.py
