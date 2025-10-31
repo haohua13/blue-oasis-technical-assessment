@@ -7,7 +7,7 @@ import os
 import io
 import base64
 import matplotlib
-matplotlib.use('Agg')  # Prevent GUI backend issues
+matplotlib.use('Agg') # use a non-interactive backend for matplotlib
 def load_metadata(base_data_path="data/esc50"):
     metadata_path = os.path.join(base_data_path, 'meta', 'esc50.csv')
     metadata = pd.read_csv(metadata_path)
@@ -16,6 +16,18 @@ def load_metadata(base_data_path="data/esc50"):
         axis=1
     )
     return metadata
+
+def preprocess_for_cnn(y, sr, n_fft=2048, hop_length=512, n_mels=128):
+    """
+    Generate a mel spectrogram suitable for CNN input.
+    """
+    # normalize amplitude
+    y = librosa.util.normalize(y)
+    # generate mel spectrogram
+    S = librosa.feature.melspectrogram(y=y, sr=sr, n_fft=n_fft, hop_length=hop_length, n_mels=n_mels)
+    # convert to decibels
+    S_db = librosa.power_to_db(S, ref=np.max)
+    return S_db
 
 def preprocess_audio(y, sr, n_fft=2048, hop_length=512, n_mels=128, n_mfcc=20):
     """
@@ -85,7 +97,7 @@ def generate_audio_plots(y, sr, mel_spectrogram_db, mfccs, zrc, title="Audio Fea
     plt.show()
     plots['mfcc_b64'] = plot_to_base64(fig_mfcc)
 
-    # 4. ZCR plot
+    # 4. zero-crossing rate
     fig_zcr, ax_zcr = plt.subplots(figsize=(10, 4))
     zcr = librosa.feature.zero_crossing_rate(y)[0]
     times = librosa.times_like(zcr, sr=sr)

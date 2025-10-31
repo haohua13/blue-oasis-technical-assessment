@@ -92,6 +92,8 @@ Example for a 2-D CNN:
 * We assume, 5 second clips, sampled at 22050 Hz, **`n_fft = 2048`**, **`hop_length = 512`**, 
 **`n_mels = 128`**
 Each audio clip is `5 seconds * 22050 Hz = 110250` samples. `1 + floor(110250 / 512) = 1 + 215 = 216` time frames
-Input feature to CNN would be 2D array of 2D array of `(128, 216)`. For TF, this would be presented as `(128, 216, 1)`, where `1` denotes a single channel (like a grayscale image).
+Input feature to CNN would be 2D array of 2D array of `(128, 216)`. This would be presented as `(128, 216, 1)`, where `1` denotes a single channel (like a grayscale image).
 
 Functions: Conv2D, Batch Normalization, MaxPooling, DropoutFlatten, Dense, Softmax activation
+
+I did a very small CNN model for fast testing in my personal computer. 
