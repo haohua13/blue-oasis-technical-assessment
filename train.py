@@ -92,17 +92,16 @@ if __name__ == '__main__':
         "epochs": 30, # Number of training epochs
         "batch_size": 32, # Adjust based on your memory capacity
         "learning_rate": 0.001,
-        "validation_fold": 1
+        "validation_fold": 1,
+        "test_fold": 2
     }
-
-    # set device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
 
     # load metadata
     metadata = load_metadata(CONFIG["base_data_path"])
     
-    # pre-compute features for all files
+    # pre-compute features
     print("Preprocessing all audio files. This may take a while...")
     max_len = int(np.ceil(CONFIG["sr"] * CONFIG["duration"] / CONFIG["hop_length"]))
     all_features = []
@@ -113,7 +112,6 @@ if __name__ == '__main__':
             y, sr = librosa.load(row['filepath'], sr=CONFIG["sr"], duration=CONFIG["duration"])
             mel_spec = preprocess_for_cnn(y, sr, n_mels=CONFIG["n_mels"], hop_length=CONFIG["hop_length"])
             
-            # pad or truncate to ensure fixed size
             if mel_spec.shape[1] < max_len:
                 mel_spec = np.pad(mel_spec, ((0, 0), (0, max_len - mel_spec.shape[1])), mode='constant')
             else:
@@ -129,20 +127,32 @@ if __name__ == '__main__':
     encoded_labels = label_encoder.fit_transform(all_labels)
     num_classes = len(label_encoder.classes_)
 
-    # split data based on fold (thanks to ESC-50 design)
-    train_indices = metadata[metadata['fold'] != CONFIG["validation_fold"]].index
+    # Split data into train, validation and test set based on folds
+    train_folds = [f for f in metadata['fold'].unique() if f not in [CONFIG["validation_fold"], CONFIG["test_fold"]]]
+    
+    train_indices = metadata[metadata['fold'].isin(train_folds)].index
     val_indices = metadata[metadata['fold'] == CONFIG["validation_fold"]].index
+    test_indices = metadata[metadata['fold'] == CONFIG["test_fold"]].index
+    
+    print(f"\nTraining folds: {train_folds}, Validation fold: {CONFIG['validation_fold']}, Test fold: {CONFIG['test_fold']}")
+    print(f"Training samples: {len(train_indices)}, Validation samples: {len(val_indices)}, Test samples: {len(test_indices)}")
 
+    # create feature/label splits
     X_train = [all_features[i] for i in train_indices]
     y_train = encoded_labels[train_indices]
     X_val = [all_features[i] for i in val_indices]
     y_val = encoded_labels[val_indices]
+    X_test = [all_features[i] for i in test_indices]
+    y_test = encoded_labels[test_indices]
 
-    # create dataloaders
+    # create Datasets and DataLoaders
     train_dataset = ESC50Dataset(X_train, y_train)
     val_dataset = ESC50Dataset(X_val, y_val)
+    test_dataset = ESC50Dataset(X_test, y_test)
+
     train_loader = DataLoader(train_dataset, batch_size=CONFIG["batch_size"], shuffle=True, num_workers=4, pin_memory=True)
     val_loader = DataLoader(val_dataset, batch_size=CONFIG["batch_size"], shuffle=False, num_workers=4, pin_memory=True)
+    test_loader = DataLoader(test_dataset, batch_size=CONFIG["batch_size"], shuffle=False, num_workers=4, pin_memory=True)
 
     # initialize model, loss, and optimizer
     model = SimpleCNN(num_classes=num_classes).to(device)
@@ -151,17 +161,30 @@ if __name__ == '__main__':
     
     # training loop
     best_val_acc = 0.0
+    model_save_path = 'esc50_cnn_best_model.pth'
     print("\n--- Starting Model Training ---")
     for epoch in range(CONFIG["epochs"]):
         train_loss, train_acc = train_epoch(model, train_loader, criterion, optimizer, device)
-        val_loss, val_acc = evaluate_epoch(model, val_loader, criterion, device)
+        val_loss, val_acc = evaluate_epoch(model, val_loader, criterion, device, desc="Validation")
         
         print(f"Epoch {epoch+1}/{CONFIG['epochs']} | Train Loss: {train_loss:.4f}, Acc: {train_acc:.4f} | Val Loss: {val_loss:.4f}, Acc: {val_acc:.4f}")
         
         if val_acc > best_val_acc:
             best_val_acc = val_acc
-            torch.save(model.state_dict(), 'esc50_cnn_best_model.pth')
+            torch.save(model.state_dict(), model_save_path)
             print(f"  -> New best model saved with accuracy: {val_acc:.4f}")
 
     print("\n--- Training Finished ---")
     print(f"Best validation accuracy: {best_val_acc:.4f}")
+
+    # evaluate on the test set (unseen data)
+    print("\n--- Evaluating on Test Set ---")
+    # load the best model weights that were saved during training
+    best_model = SimpleCNN(num_classes=num_classes).to(device)
+    best_model.load_state_dict(torch.load(model_save_path))
+
+    # evaluate
+    test_loss, test_acc = evaluate_epoch(best_model, test_loader, criterion, device, desc="Testing")
+    print(f"\nFinal Test Results:")
+    print(f"  Test Loss: {test_loss:.4f}")
+    print(f"  Test Accuracy: {test_acc:.4f}")

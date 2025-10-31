@@ -90,16 +90,16 @@ def explore_audio():
         return jsonify(error=f"Audio file not found for {audio_filename}. Check dataset path."), 404
 
     try:
-        # Load audio (downsample to 22050 Hz for consistency and efficiency)
+        # load audio (downsample to 22050 Hz for consistency and efficiency)
         y, sr = librosa.load(audio_filepath, sr=22050) 
 
-        # Preprocess to get features
+        # preprocess to get features
         mel_spec_db, mfccs, zrc = preprocess_audio(y, sr)
 
-        # Generate plots as base64 images
+        # generate plots as base64 images
         plots_b64 = generate_audio_plots(y, sr, mel_spec_db, mfccs, zrc, title=f"{audio_class} ({audio_filename})")
 
-        # Create a URL for audio playback. Flask's send_from_directory will handle serving it.
+        # create a URL for audio playback. Flask's send_from_directory will handle serving it.
         audio_url = url_for('serve_audio', filename=audio_filename)
 
         return jsonify(
@@ -120,7 +120,7 @@ def explore_audio():
 @app.route('/audio/<path:filename>')
 def serve_audio(filename):
     """Serve audio files directly from the dataset's audio folder."""
-    # This serves files from ESC-50-master/audio
+    # this serves files from ESC-50-master/audio
     return send_from_directory(os.path.join(BASE_DATA_PATH, 'audio'), filename)
 
 if __name__ == '__main__':

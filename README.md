@@ -96,4 +96,6 @@ Input feature to CNN would be 2D array of 2D array of `(128, 216)`. This would b
 
 Functions: Conv2D, Batch Normalization, MaxPooling, DropoutFlatten, Dense, Softmax activation
 
-I did a very small CNN model for fast testing in my personal computer. 
+I did a very small CNN model for fast testing in my personal computer with 2 convolutional networks. 
+30 epochs, learning rate = 0.001, batch size = 32, AdaptiveAvgPool2d, Adam optimizer
+Validation Accuracy = 51.75%
