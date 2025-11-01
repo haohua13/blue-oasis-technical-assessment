@@ -1,5 +1,5 @@
 # blue-oasis-technical-assessment
-Technical assessment using the ESC-50 dataset. It provides a simple web interface to explore some features of environmental sounds.
+Technical assessment using the ESC-50 dataset, with a simple web interface to explore some features of environmental sounds.
 
 ## Setup Instructions
 
