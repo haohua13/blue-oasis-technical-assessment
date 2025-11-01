@@ -55,7 +55,7 @@ The `data_processing.py` script handles the conversion of raw `.wav` audio files
 *   **`n_fft = 2048` (Window size for FFT):** A larger `n_fft` offers finer frequency resolution but coarser time resolution, and vice-versa.
 *   **`hop_length = 512` (Number of samples between successive frames):** How often new feature frames are calculated. A `hop_length` of 512 samples means 75% overlap with a `n_fft` of 2048. Smaller `hop_length` results in a denser spectrogram (more time frames) but increases computational cost.
 *   **`n_mels = 128` (Number of Mel bands):** This determines the resolution of the Mel-frequency axis.
-*   **`n_mfcc = 20` (Number of MFCC coefficients):** The number of coefficients capture the detail of the spectral envelope without introducing excessive noise or dimensionality. 13-40 coefficients are common ranges.
+*   **`n_mfcc = 20` (Number of MFCC coefficients):** The number of coefficients capture the detail of the spectral envelope without introducing excessive noise or dimensionality. 13-40 coefficients are common ranges. Trade-off between detail and noise.
 
 ### Overview:
 
@@ -70,12 +70,18 @@ From the paper "These annotations were then used to extract 5-second-long record
 
 *   **Dataset Design:** The `esc50.csv` metadata includes a `fold` column (1 to 5). The dataset creators ensured that recordings from the same original source (`src_file` in the metadata) are *always* kept within the same fold. This ensures that *source-based data leakeage does not occur during training*. For temporal bias, the recordings are distinct environmental events rather than continuous streams. 
 
-The ESC-50 is also a balanced dataset. For other imbalanced datasets, I would apply oversampling/undersampling techniques. Class weighting (assigning higher weights to minority classes in the loss function) or augmentation (pitch shift, stretching, noise injection/reduction). For overfitting scenarios, I would assume that these could be issues: overlap between recordings, specific recording conditions/equipment, specific background noise, small training datasets. To tackle this, I would add random noise to every ESC-50 sample.
+The ESC-50 is also a balanced dataset. For other imbalanced datasets, I would apply oversampling/undersampling techniques. Class weighting (assigning higher weights to minority classes in the loss function) or augmentation (pitch shift, stretching, noise injection/reduction). For overfitting scenarios, I would assume that these could be issues: overlap between recordings, specific recording conditions/equipment, specific background noise, small training datasets. To tackle this, I would add random noise to every ESC-50 sample or fine-tune pre-trained larger models.
 
+### Overview:
+
+* No recordings from same source appear in multiple folds
+* ESC-50 dataset uses distinct event recordings (not continuous streams)
+* If working with continuous recordings, would split by time periods with gaps
+- Example: I would assume that marine recordings might have seasonal patterns requiring stratified temporal splits (specific locations in the ocean, water temperature, ecossystem, summer/winter?)
 
 ## 3. Model Architecture Selection
 
-I would use a Convolutional Neural Network (CNN). The dataset is actually very small (2k samples). If there is already pre-trained models on much larger audio datasets, I would use these since they have already learned general audio representations. The mel-spectograms are 2-D images (frequency vs time). CNNs can extract hierarchical, local and translation-invariant features from image-like data.
+I would use a Convolutional Neural Network (CNN). The dataset is actually very small (2k samples). If there is already pre-trained models on much larger audio datasets, I would use these since they have already learned general audio representations. The mel-spectograms are 2-D images (frequency vs time). CNNs can extract *hierarchical, local and translation-invariant features* from image-like data. 
 
 Example for a 2-D CNN:
 * We assume, 5 second clips, sampled at 22050 Hz, **`n_fft = 2048`**, **`hop_length = 512`**, 
@@ -83,9 +89,26 @@ Example for a 2-D CNN:
 Each audio clip is `5 seconds * 22050 Hz = 110250` samples. `1 + floor(110250 / 512) = 1 + 215 = 216` time frames.
 Input feature to CNN would be 2D array of 2D array of `(128, 216)`. This would be presented as `(128, 216, 1)`, where `1` denotes a single channel (like a grayscale image).
 
-Functions: Conv2D, Batch Normalization, MaxPooling, DropoutFlatten, Dense, Softmax activation
+I did a very small CNN model for fast testing in my personal computer with 2 convolutional networks. 30 epochs, learning rate = 0.001, batch size = 32, AdaptiveAvgPool2d, Adam optimizer.
+- **Validation Accuracy**: 47.8%
+- **Training Time**: ~30 minutes (30 epochs)
+- **Baseline Comparison**: Human accuracy ≈ 81.3%
+- **State-of-art**: ~90% with transfer learning
 
-I did a very small CNN model for fast testing in my personal computer with 2 convolutional networks. 
-30 epochs, learning rate = 0.001, batch size = 32, AdaptiveAvgPool2d, Adam optimizer
+**[Optional] Train the model**
+To enable prediction features in the web visualization interface
+    ```bash
+    python train.py
+    ```
+This will train the CNN model and save it as `esc50_cnn_best_model.pth`.
 
-* Validation Accuracy = 47.75%
+### Overview:
+
+* CNNs may have a limited performance for evaluating temporal differences between the input. Two spectograms with different lengths. ESC-50 clips are fixed 5 seconds.
+* LSTM handle temporal differences or variable-length sequences. 
+* Transfer learning would improve results drastically (YAMNet, VGGish). Use a pre-trained NNs on a larger dataset and fine-tune with ESC-50 dataset.
+
+
+### Limitations and Questions:
+
+* 

@@ -1,29 +1,31 @@
 # app.py
 from flask import Flask, render_template, request, jsonify, url_for, send_from_directory
 import matplotlib
-from data_processing import load_metadata, preprocess_audio, generate_audio_plots
+import torch
+import torch.nn as nn
+from train import SimpleCNN
+from data_processing import load_metadata, preprocess_audio, generate_audio_plots, preprocess_for_cnn
 import librosa
 import os
 import pandas as pd
-import random 
 import logging
 import matplotlib
-matplotlib.use('Agg')  # Use a non-interactive backend for matplotlib
+matplotlib.use('Agg')  # use a non-interactive backend for matplotlib
     
 app = Flask(__name__)
 
-# Configure logging
+# configure logging
 logging.basicConfig(level=logging.INFO)
 app.logger.setLevel(logging.INFO)
 
 BASE_DATA_PATH = "ESC-50-master" 
-# Load metadata once when the app starts
+# load metadata once when the app starts
 try:
     METADATA = load_metadata(BASE_DATA_PATH)
     app.logger.info(f"Flask App: Loaded {len(METADATA)} audio files metadata.")
     
-    # Create a mapping from category names to integer labels if needed for model training
-    # And get unique categories for dropdown listf
+    # create a mapping from category names to integer labels if needed for model training
+    # and get unique categories for dropdown list
     unique_categories = sorted(METADATA['category'].unique().tolist())
     category_to_id = {cat: i for i, cat in enumerate(unique_categories)}
     id_to_category = {i: cat for cat, i in category_to_id.items()}
@@ -32,10 +34,27 @@ try:
     app.logger.info(f"Loaded {len(unique_categories)} unique categories.")
     app.logger.info(f"First 5 categories: {unique_categories[:5]}")
 
+    # load trained model here if needed for inference
+    model_path = 'esc50_cnn_best_model.pth'
+    if os.path.exists(model_path):
+        device = torch.device("cpu")
+        model = SimpleCNN(num_classes=len(unique_categories))
+        model.load_state_dict(torch.load(model_path, map_location=device))
+        model.to(device)
+        model.eval()
+        app.logger.info(f"Loaded trained model from {model_path}")
+    else:
+        app.logger.warning(f"Trained model not found. Predictions will be unavailable.")
+
+except FileNotFoundError:
+    app.logger.error(f"ERROR: ESC-50 metadata not found at {os.path.join(BASE_DATA_PATH, 'meta', 'esc50.csv')}")
+except Exception as e:
+    app.logger.error(f"An unexpected error occurred: {e}")
+
 except FileNotFoundError:
     app.logger.error(f"ERROR: ESC-50 metadata not found at {os.path.join(BASE_DATA_PATH, 'meta', 'esc50.csv')}")
     app.logger.error("Please ensure the ESC-50 dataset is correctly placed in the 'ESC-50-master' directory.")
-    METADATA = pd.DataFrame() # Create an empty DataFrame to prevent errors
+    METADATA = pd.DataFrame() # create an empty DataFrame to prevent errors
     unique_categories = []
     category_to_id = {}
     id_to_category = {}
@@ -49,7 +68,27 @@ except Exception as e:
 @app.route('/')
 def index():
     """Renders the main page with a list of ESC-50 categories."""
-    return render_template('index.html', categories=unique_categories)
+    folds = sorted(METADATA['fold'].unique().tolist()) if not METADATA.empty else []
+    return render_template('index.html', 
+                         categories=unique_categories,
+                         folds=folds,
+                         model_loaded=model is not None)
+
+@app.route('/get_statistics', methods=['GET'])
+def get_statistics():
+    """Get dataset statistics."""
+    if METADATA.empty:
+        return jsonify(error="Dataset metadata not loaded."), 500
+    
+    class_counts = METADATA['category'].value_counts().to_dict()
+    fold_counts = METADATA['fold'].value_counts().sort_index().to_dict()
+    
+    return jsonify(
+        total_samples=len(METADATA),
+        num_classes=len(unique_categories),
+        class_distribution=class_counts,
+        fold_distribution=fold_counts
+    )
 
 @app.route('/explore_audio', methods=['POST'])
 def explore_audio():
@@ -58,11 +97,13 @@ def explore_audio():
     from a specified class (category_name) or a specific file_id.
     Returns base64 encoded images of the plots and audio URL.
     """
-    category_name = request.form.get('category_name') # User inputs category name
-    file_id = request.form.get('file_id') # User can also input a specific file ID
+    category_name = request.form.get('category_name') # user inputs category name
+    file_id = request.form.get('file_id') # user can also input a specific file ID
+    fold = request.form.get('fold')  # optional fold selection
 
     if METADATA.empty:
         return jsonify(error="Dataset metadata not loaded. Check server logs."), 500
+    
 
     audio_info = None
     if file_id:
@@ -73,7 +114,7 @@ def explore_audio():
         if category_name not in unique_categories:
             return jsonify(error=f"Category '{category_name}' not found. Please choose from the list."), 400
         
-        # Select a random audio file from the chosen category
+        # select a random audio file from the chosen category
         category_files = METADATA[METADATA['category'] == category_name]
         if not category_files.empty:
             audio_info = category_files.sample(1).iloc[0]
