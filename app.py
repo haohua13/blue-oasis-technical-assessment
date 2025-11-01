@@ -18,7 +18,8 @@ app = Flask(__name__)
 # configure logging
 logging.basicConfig(level=logging.INFO)
 app.logger.setLevel(logging.INFO)
-
+model = None
+device = torch.device("cpu")
 BASE_DATA_PATH = "ESC-50-master" 
 # load metadata once when the app starts
 try:
@@ -205,20 +206,20 @@ def explore_audio():
         app.logger.error(f"Error processing audio file {audio_filename}: {e}", exc_info=True)
         return jsonify(error=f"An error occurred while processing the audio: {str(e)}"), 500
 
-
 @app.route('/compare_samples', methods=['POST'])
 def compare_samples():
-    """Get multiple samples from the same class for comparison."""
+    """Compare multiple samples from the same class and show CNN predictions."""
     category_name = request.form.get('category_name')
     num_samples = int(request.form.get('num_samples', 3))
     fold = request.form.get('fold')
-    
+
     if METADATA.empty:
         return jsonify(error="Dataset metadata not loaded."), 500
-    
+
     if category_name not in unique_categories:
         return jsonify(error=f"Category '{category_name}' not found."), 400
-    
+
+    # filter by fold
     filtered_metadata = METADATA
     if fold and fold != 'all':
         try:
@@ -226,35 +227,69 @@ def compare_samples():
             filtered_metadata = METADATA[METADATA['fold'] == fold_num]
         except ValueError:
             return jsonify(error="Invalid fold number."), 400
-    
+
     category_files = filtered_metadata[filtered_metadata['category'] == category_name]
-    
-    if len(category_files) < num_samples:
-        num_samples = len(category_files)
-    
+
     if category_files.empty:
         return jsonify(error=f"No samples found for category '{category_name}'."), 404
-    
+
     sampled_files = category_files.sample(min(num_samples, len(category_files)))
-    
+
     samples = []
     for _, audio_info in sampled_files.iterrows():
         audio_filename = audio_info['filename']
         audio_filepath = audio_info['filepath']
         audio_fold = int(audio_info['fold'])
-        
-        if os.path.exists(audio_filepath):
+
+        if not os.path.exists(audio_filepath):
+            continue
+
+        try:
             y, sr = librosa.load(audio_filepath, sr=22050)
             duration = len(y) / sr
-            
+
+            prediction_data = None
+            if model is not None:
+                try:
+                    mel_spec_cnn = preprocess_for_cnn(y, sr, n_mels=128, hop_length=512)
+                    max_len = int(np.ceil(sr * 5 / 512))
+                    if mel_spec_cnn.shape[1] < max_len:
+                        mel_spec_cnn = np.pad(mel_spec_cnn, ((0, 0), (0, max_len - mel_spec_cnn.shape[1])), mode='constant')
+                    else:
+                        mel_spec_cnn = mel_spec_cnn[:, :max_len]
+
+                    input_tensor = torch.tensor(mel_spec_cnn, dtype=torch.float32).unsqueeze(0).unsqueeze(0).to(device)
+
+                    with torch.no_grad():
+                        output = model(input_tensor)
+                        probs = torch.nn.functional.softmax(output, dim=1)[0]
+                        top5_probs, top5_indices = torch.topk(probs, min(5, len(probs)))
+                        top5_predictions = [
+                            {'class': unique_categories[idx.item()], 'probability': prob.item() * 100}
+                            for prob, idx in zip(top5_probs, top5_indices)
+                        ]
+                        predicted_class = unique_categories[top5_indices[0].item()]
+                        confidence = top5_probs[0].item() * 100
+
+                    prediction_data = {
+                        'predicted_class': predicted_class,
+                        'confidence': confidence,
+                        'correct': predicted_class == category_name,
+                        'top5_predictions': top5_predictions
+                    }
+                except Exception as e:
+                    app.logger.error(f"Error during CNN prediction for {audio_filename}: {e}")
+
             samples.append({
                 'filename': audio_filename,
                 'fold': audio_fold,
                 'duration': f"{duration:.2f} s",
                 'audio_url': url_for('serve_audio', filename=audio_filename),
-                'src_file': audio_info.get('src_file', 'N/A')
+                'prediction': prediction_data
             })
-    
+        except Exception as e:
+            app.logger.error(f"Error loading audio {audio_filename}: {e}")
+
     return jsonify(
         category=category_name,
         num_samples=len(samples),

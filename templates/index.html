@@ -99,13 +99,20 @@
 
         <section class="compare-section">
             <h2>Compare Samples</h2>
-            <p>This feature lets you compare several random samples from the same sound category. Useful for exploring within-class variation.</p>
+            <p>This feature lets you compare several random samples from the same sound category. Useful for exploring within-class variation of the CNN performance.</p>
             <form id="compareForm">
                 <div class="input-group">
                     <label for="compareCategory">Category:</label>
                     <select id="compareCategory" name="category_name">
                         {% for category in categories %}
                         <option value="{{ category }}">{{ category }}</option>
+                        {% endfor %}
+                    </select>
+                    <label for="foldCompare">Fold:</label>
+                    <select id="foldCompare" name="fold">
+                        <option value="all">All</option>
+                        {% for f in folds %}
+                        <option value="{{ f }}">{{ f }}</option>
                         {% endfor %}
                     </select>
                     <label for="numSamples">Number of Samples:</label>
@@ -118,7 +125,9 @@
 
         <section class="stats-section">
             <h2>Dataset Statistics</h2>
-            <p>Displays basic information about the ESC-50 dataset, such as total samples, number of classes, and class distribution.</p>
+            <p>Displays basic information about the ESC-50 dataset, such as total samples, number of classes, and class distribution.
+                In this case the dataset is balanced so not very interesting...
+            </p>
             <button id="loadStats">Show Statistics</button>
             <div id="statsOutput"></div>
         </section>

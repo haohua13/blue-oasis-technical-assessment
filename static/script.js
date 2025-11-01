@@ -83,11 +83,13 @@ document.getElementById('audioForm').addEventListener('submit', async function(e
 });
 
 // ====== COMPARE SAMPLES ======
-document.getElementById('compareForm').addEventListener('submit', async function(event) {
+document.getElementById('compareForm').addEventListener('submit', async function (event) {
     event.preventDefault();
 
     const category = document.getElementById('compareCategory').value;
     const numSamples = document.getElementById('numSamples').value;
+    const fold = document.getElementById('foldCompare').value; // 👈 add this
+
     const compareDiv = document.getElementById('compareResults');
     const errorDiv = document.getElementById('error');
 
@@ -103,17 +105,17 @@ document.getElementById('compareForm').addEventListener('submit', async function
     compareDiv.innerHTML = '<p>Loading comparison samples...</p>';
 
     try {
-        // send as FormData (matches Flask)
         const formData = new FormData();
         formData.append('category_name', category);
         formData.append('num_samples', numSamples);
+        formData.append('fold', fold); // 👈 add this
 
         const response = await fetch('/compare_samples', {
             method: 'POST',
             body: formData
         });
-        const data = await response.json();
 
+        const data = await response.json();
         if (!response.ok) throw new Error(data.error || `HTTP error! status: ${response.status}`);
 
         if (!data.samples || data.samples.length === 0) {
@@ -121,14 +123,29 @@ document.getElementById('compareForm').addEventListener('submit', async function
             return;
         }
 
-        let html = `<p>Comparing <strong>${data.samples.length}</strong> samples from category <strong>${category}</strong>.</p>`;
+        let html = `<p>Comparing <strong>${data.samples.length}</strong> samples from category <strong>${data.category}</strong>:</p>`;
         data.samples.forEach((s, i) => {
             html += `
-                <div class="compare-item">
-                    <h4>Sample ${i + 1}: ${s.filename}</h4>
-                    <audio controls src="${s.audio_url}"></audio>
-                    <p>Duration: ${s.duration}</p>
-                </div>`;
+                    <div class="compare-item">
+                        <h4>Sample ${i + 1}: ${s.filename} (${s.duration})</h4>
+                        <audio controls src="${s.audio_url}"></audio>
+                        ${
+                            s.prediction
+                                ? `
+                                <p><strong>Predicted:</strong> 
+                                    <span style="color:${s.prediction.correct ? 'green' : 'red'};">
+                                        ${s.prediction.predicted_class}
+                                    </span>
+                                    (${s.prediction.confidence.toFixed(1)}%)
+                                </p>
+                                <ul>
+                                    ${s.prediction.top5_predictions
+                                        .map(p => `<li>${p.class}: ${p.probability.toFixed(1)}%</li>`)
+                                        .join('')}
+                                </ul>`
+                                : `<p>Prediction unavailable.</p>`
+                        }
+                    </div>`;
         });
         compareDiv.innerHTML = html;
 
@@ -140,13 +157,10 @@ document.getElementById('compareForm').addEventListener('submit', async function
     }
 });
 
-// ====== DATASET STATISTICS ======
+// ====== SHOW STATISTICS ======
 document.getElementById('loadStats').addEventListener('click', async function() {
     const statsDiv = document.getElementById('statsOutput');
-    const errorDiv = document.getElementById('error');
-
-    statsDiv.innerHTML = '<p>Loading dataset statistics...</p>';
-    errorDiv.style.display = 'none';
+    statsDiv.innerHTML = 'Loading statistics...';
 
     try {
         const response = await fetch('/get_statistics');
@@ -155,19 +169,24 @@ document.getElementById('loadStats').addEventListener('click', async function() 
         if (!response.ok) throw new Error(data.error || `HTTP error! status: ${response.status}`);
 
         let html = `
-            <p>The ESC-50 dataset contains <strong>${data.total_samples}</strong> samples 
-            across <strong>${data.num_classes}</strong> categories.</p>
-            <ul>`;
-        for (const [cat, count] of Object.entries(data.class_distribution)) {
-            html += `<li>${cat}: ${count} samples</li>`;
-        }
-        html += '</ul>';
+            <p><strong>Total Samples:</strong> ${data.total_samples}</p>
+            <p><strong>Number of Classes:</strong> ${data.num_classes}</p>
+            <h4>Class Distribution:</h4>
+            <ul>
+                ${Object.entries(data.class_distribution)
+                    .map(([cls, count]) => `<li>${cls}: ${count}</li>`)
+                    .join('')}
+            </ul>
+            <h4>Fold Distribution:</h4>
+            <ul>
+                ${Object.entries(data.fold_distribution)
+                    .map(([fold, count]) => `<li>Fold ${fold}: ${count}</li>`)
+                    .join('')}
+            </ul>
+        `;
         statsDiv.innerHTML = html;
-
     } catch (e) {
-        statsDiv.innerHTML = '';
-        errorDiv.textContent = 'Error loading statistics: ' + e.message;
-        errorDiv.style.display = 'block';
+        statsDiv.innerHTML = `<p class="error-box">Error loading statistics: ${e.message}</p>`;
         console.error('Statistics fetch failed:', e);
     }
 });
