@@ -107,7 +107,7 @@ def explore_audio():
     if METADATA.empty:
         return jsonify(error="Dataset metadata not loaded. Check server logs."), 500
 
-    # Apply fold filter if specified
+    # apply fold filter if specified
     filtered_metadata = METADATA
     if fold and fold != 'all':
         try:

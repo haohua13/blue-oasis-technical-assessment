@@ -90,8 +90,8 @@ if __name__ == '__main__':
         "duration": 5,
         "n_mels": 128,
         "hop_length": 512,
-        "epochs": 30, # Number of training epochs
-        "batch_size": 32, # Adjust based on your memory capacity
+        "epochs": 30, # number of training epochs
+        "batch_size": 32, # adjust based on your memory capacity
         "learning_rate": 0.001,
         "validation_fold": 1,
         "test_fold": 2
