@@ -77,7 +77,7 @@ The ESC-50 is also a balanced dataset. For other imbalanced datasets, I would ap
 * No recordings from same source appear in multiple folds
 * ESC-50 dataset uses distinct event recordings (not continuous streams)
 * If working with continuous recordings, would split by time periods with gaps
-- Example: I would assume that marine recordings might have seasonal patterns requiring stratified temporal splits (specific locations in the ocean, water temperature, ecossystem, summer/winter?)
+- *Example*: I would assume that marine recordings might have seasonal patterns requiring stratified temporal splits (specific locations in the ocean, water temperature, ecossystem, summer/winter?)
 
 ## 3. Model Architecture Selection
 
@@ -95,12 +95,11 @@ I did a very small CNN model for fast testing in my personal computer with 2 con
 - **Baseline Comparison**: Human accuracy ≈ 81.3%
 - **State-of-art**: ~90% with transfer learning
 
-**[Optional] Train the model**
-To enable prediction features in the web visualization interface
+Optional. **Train the model:**
     ```bash
     python train.py
     ```
-This will train the CNN model and save it as `esc50_cnn_best_model.pth`.
+This will train the CNN model and save it as `esc50_cnn_best_model.pth`, enabling prediction features in the web visualization interface.
 
 ### Overview:
 
@@ -108,7 +107,3 @@ This will train the CNN model and save it as `esc50_cnn_best_model.pth`.
 * LSTM handle temporal differences or variable-length sequences. 
 * Transfer learning would improve results drastically (YAMNet, VGGish). Use a pre-trained NNs on a larger dataset and fine-tune with ESC-50 dataset.
 
-
-### Limitations and Questions:
-
-* 
