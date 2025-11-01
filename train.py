@@ -52,6 +52,7 @@ class SimpleCNN(nn.Module):
         x = self.flatten(x)
         return self.fc(x)
 
+# training function
 def train_epoch(model, loader, criterion, optimizer, device):
     model.train()
     running_loss = 0.0
@@ -67,7 +68,7 @@ def train_epoch(model, loader, criterion, optimizer, device):
         _, preds = torch.max(outputs, 1)
         correct_preds += torch.sum(preds == labels.data)
     return running_loss / len(loader.dataset), correct_preds.double() / len(loader.dataset)
-
+# evaluate model function
 def evaluate_epoch(model, loader, criterion, device, desc="Evaluating"):
     model.eval()
     running_loss = 0.0
@@ -82,8 +83,9 @@ def evaluate_epoch(model, loader, criterion, device, desc="Evaluating"):
             correct_preds += torch.sum(preds == labels.data)
     return running_loss / len(loader.dataset), correct_preds.double() / len(loader.dataset)
 
-
+# main training script
 if __name__ == '__main__':
+    # here you can adjust hyperparameters of the input data and also model training
     CONFIG = {
         "base_data_path": "ESC-50-master",
         "sr": 22050,
@@ -102,7 +104,7 @@ if __name__ == '__main__':
     # load metadata
     metadata = load_metadata(CONFIG["base_data_path"])
     
-    # pre-compute features
+    # pre-compute input features for all audio files
     print("Preprocessing all audio files. This may take a while...")
     max_len = int(np.ceil(CONFIG["sr"] * CONFIG["duration"] / CONFIG["hop_length"]))
     all_features = []
@@ -128,7 +130,7 @@ if __name__ == '__main__':
     encoded_labels = label_encoder.fit_transform(all_labels)
     num_classes = len(label_encoder.classes_)
 
-    # Split data into train, validation and test set based on folds
+    # split data into train, validation and test set based on folds! dataset is pre-split into 5 folds
     train_folds = [f for f in metadata['fold'].unique() if f not in [CONFIG["validation_fold"], CONFIG["test_fold"]]]
     
     train_indices = metadata[metadata['fold'].isin(train_folds)].index
