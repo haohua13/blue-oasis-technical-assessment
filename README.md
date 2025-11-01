@@ -1,5 +1,5 @@
 # blue-oasis-technical-assessment
-Technical assessment of [blueOASIS] (https://blueoasis.pt/).
+Technical assessment of [blueOASIS](https://blueoasis.pt/).
 Implementation of a simple CNN using PyTorch and a simple web interface using Flask to explore some features of audio data (Mel spectograms, MFCCs, ZRCs) from the ESC-50 dataset. 
 
 ## Setup Instructions
