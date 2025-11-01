@@ -23,6 +23,10 @@ Technical assessment using the ESC-50 dataset, with a simple web interface to ex
         ```bash
         source venv/bin/activate
         ```
+    * **On Windows:**
+      ```bash
+        source venv/Scripts/activate
+        ```
 5.  **Install Dependencies:**
     ```bash
     pip install -r requirements.txt
