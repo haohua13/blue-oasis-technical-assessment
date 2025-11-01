@@ -41,7 +41,7 @@ Technical assessment using the ESC-50 dataset, with a simple web interface to ex
 **Dataset:** ESC-50: A dataset for environmental sound classification.
 
 *   **Description:** The ESC-50 dataset consists of 2000 annotated environmental sound recordings, each 5 seconds long. It's organized into 50 classes, with 40 examples per class. The dataset is pre-arranged into 5 folds for 5-fold cross-validation. 
-*   **Reason for Selection:** 2k audio files, 5 second clips, balanced dataset, and pre-defined cross-validation folds. A lot of papers for benchmarking and comparing results. See the Github repository. 
+*   **Reason for Selection:** 2k audio files, 5 second clips, balanced dataset, and pre-defined cross-validation folds. A lot of papers for benchmarking and comparing results. See the [Github repository](https://github.com/karolpiczak/ESC-50). 
 
 ### Preprocessing Steps:
 
