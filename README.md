@@ -32,6 +32,9 @@ Technical assessment using the ESC-50 dataset, with a simple web interface to ex
     python app.py
     ```
     The application will start, usually accessible at `http://127.0.0.1:5000/`.
+   <p align="center">
+      <img src="image.png" alt="Flask App Preview" width="300">
+    </p>
 
 ## 1. Dataset Selection & Preparation
 
